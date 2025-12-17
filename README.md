@@ -14,12 +14,12 @@ Tiny, transparent OpenAI-style completions proxy that:
 ## Quickstart
 ```bash
 # install deps (requires network)
-pnpm install   # or npm install
+bun install   # or npm install
 
 # dev server
-pnpm dev
+bun dev
 # build & preview
-pnpm build && pnpm start
+bun build && bun start
 ```
 The dev server listens on `http://localhost:3000` by default. Override with `PORT=4000 npx nuxi dev`.
 
@@ -35,12 +35,11 @@ The dev server listens on `http://localhost:3000` by default. Override with `POR
 - **Meta-model**: friendly alias (e.g., `base`) mapped to an ordered list of models. Routing picks the highest-graded candidate that is not rate-limited.
 
 ## HTTP Surface
-- `POST /v1/completions` — drop-in proxy. Body must include `model`.  
+- `POST /v1/chat/completions` — drop-in proxy. Body must include `model`.  
   - If `model` matches a real model, it proxies there.  
   - If it matches a meta-model, the router walks candidates until one is under its limits.  
   - Returns upstream JSON; on 429 includes `retry_after_seconds`.
 - `GET /v1/models` — OpenAI-style list of active concrete and meta models (meta entries include `targets` order).
-- `POST /v1/search` — Perplexity-compatible search proxy for indexed search (no meta-models; picks first active provider by priority that is under its limits; honors stored API key or incoming Authorization).
 - `GET /config` — providers, models, meta mappings (admin-protected).
 - `GET /health` — liveness.
 - Web UI at `/` (admin-protected) — manage and inspect everything.
@@ -65,7 +64,7 @@ SQLite lives at `data/rate_limits.db` with WAL + large memory cache to keep it h
 - Point provider `base_url` at `https://api.openai.com` and set `api_key` to a valid key to act as a transparent proxy.  
 - Use `curl`:
 ```bash
-curl -X POST http://localhost:3000/v1/completions \
+curl -X POST http://localhost:3000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model":"base","prompt":"hello"}'
 ```
