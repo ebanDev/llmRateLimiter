@@ -44,7 +44,7 @@ export const upsertSearchProvider = (p: SearchProvider) => {
 
 export const listSearchProviders = () => {
   return db
-    .prepare<SearchProvider>(
+    .prepare<SearchProvider, any>(
       `
       SELECT * FROM search_providers
       ORDER BY priority DESC, id ASC
@@ -55,7 +55,7 @@ export const listSearchProviders = () => {
 
 export const activeSearchProviders = () => {
   return db
-    .prepare<SearchProvider>(
+    .prepare<SearchProvider, any>(
       `
       SELECT * FROM search_providers
       WHERE active = 1

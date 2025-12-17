@@ -11,7 +11,7 @@ const windowSeconds: Record<Window, number> = {
 
 const countSince = (providerId: string, seconds: number) => {
   const cutoff = Math.floor(Date.now() / 1000) - seconds;
-  const stmt = db.prepare<{ c: number }>(
+  const stmt = db.prepare<{ c: number }, any>(
     `SELECT COUNT(*) as c FROM search_request_log WHERE provider_id = ? AND ts >= ?`
   );
   const row = stmt.get(providerId, cutoff);
@@ -33,7 +33,7 @@ export const isSearchRateLimited = (
     if (!cap) return { ok: true };
     const used = countSince(providerId, windowSeconds[window]);
     if (used < cap) return { ok: true };
-    const oldestStmt = db.prepare<{ ts: number }>(
+    const oldestStmt = db.prepare<{ ts: number }, any>(
       `SELECT ts FROM search_request_log WHERE provider_id = ? AND ts >= ? ORDER BY ts ASC LIMIT 1`
     );
     const oldest = oldestStmt.get(providerId, now - windowSeconds[window]);

@@ -15,6 +15,7 @@ const items = computed<NavigationMenuItem[][]>(() => [
         { label: "Meta Routing", icon: "ph:arrows-merge", to: "/meta", active: route.path === "/meta" },
       ]
     },
+    { label: "Settings", icon: "ph:gear-six", to: "/settings", active: route.path === "/settings" },
     [
     ],
     {

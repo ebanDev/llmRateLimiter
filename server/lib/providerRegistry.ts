@@ -132,7 +132,7 @@ export const listModels = () => {
       tokens_per_hour?: number | null;
       tokens_per_day?: number | null;
       tokens_per_month?: number | null;
-    }>(
+    }, any>(
       `
       SELECT m.id, m.provider_id, m.name, m.supports_images, m.active,
              rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
@@ -147,7 +147,7 @@ export const listModels = () => {
 
 export const listActiveModels = () => {
   return db
-    .prepare<ModelRecord & { provider_active: number; tokens_per_minute?: number | null; tokens_per_hour?: number | null; tokens_per_day?: number | null; tokens_per_month?: number | null }>(
+    .prepare<ModelRecord & { provider_active: number; tokens_per_minute?: number | null; tokens_per_hour?: number | null; tokens_per_day?: number | null; tokens_per_month?: number | null }, any>(
       `
       SELECT m.id, m.provider_id, m.name, m.supports_images, m.active,
              rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
@@ -164,12 +164,12 @@ export const listActiveModels = () => {
 };
 
 export const listProviders = () => {
-  return db.prepare<ProviderRecord>(`SELECT * FROM providers ORDER BY id`).all();
+  return db.prepare<ProviderRecord, any>(`SELECT * FROM providers ORDER BY id`).all();
 };
 
 export const listMetaModels = () => {
   return db
-    .prepare<{ meta: string; model_id: number; name: string; provider_id: string }>(
+    .prepare<{ meta: string; model_id: number; name: string; provider_id: string }, any>(
       `
       SELECT mt.meta_name as meta, mt.model_id, m.name, m.provider_id
       FROM meta_model_targets mt
@@ -182,7 +182,7 @@ export const listMetaModels = () => {
 
 export const listActiveMetaModels = () => {
   return db
-    .prepare<{ meta: string; model_id: number; name: string; provider_id: string; position: number }>(
+    .prepare<{ meta: string; model_id: number; name: string; provider_id: string; position: number }, any>(
       `
       SELECT mt.meta_name as meta, mt.model_id, m.name, m.provider_id, mt.position
       FROM meta_model_targets mt
@@ -196,7 +196,7 @@ export const listActiveMetaModels = () => {
 };
 
 export const modelByName = (name: string): (ModelRecord & ProviderRecord) | null => {
-  const stmt = db.prepare<ModelRecord & ProviderRecord>(
+  const stmt = db.prepare<ModelRecord & ProviderRecord, any>(
     `
     SELECT m.*, p.base_url, p.api_key, p.active as provider_active, p.display_name
     FROM models m
@@ -210,7 +210,7 @@ export const modelByName = (name: string): (ModelRecord & ProviderRecord) | null
 
 export const metaCandidates = (meta: string): (ModelRecord & ProviderRecord & { position: number })[] => {
   return db
-    .prepare<ModelRecord & ProviderRecord & { position: number; provider_active: number }>(
+    .prepare<ModelRecord & ProviderRecord & { position: number; provider_active: number }, any>(
       `
       SELECT m.*, mt.position, p.base_url, p.api_key, p.active as provider_active, p.display_name
       FROM meta_model_targets mt
@@ -224,7 +224,7 @@ export const metaCandidates = (meta: string): (ModelRecord & ProviderRecord & { 
 };
 
 export const modelWithLimits = (modelId: number): (ModelRecord & ProviderRecord) | null => {
-  const row = db.prepare<ModelRecord & ProviderRecord>(
+  const row = db.prepare<ModelRecord & ProviderRecord, any>(
     `
     SELECT m.*, rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
            rl.tokens_per_minute, rl.tokens_per_hour, rl.tokens_per_day, rl.tokens_per_month,
@@ -240,7 +240,7 @@ export const modelWithLimits = (modelId: number): (ModelRecord & ProviderRecord)
 };
 
 export const modelId = (providerId: string, name: string): number | null => {
-  const row = db.prepare<{ id: number }>(
+  const row = db.prepare<{ id: number }, any>(
     `SELECT id FROM models WHERE provider_id = ? AND name = ? LIMIT 1`
   ).get(providerId, name);
   return row?.id ?? null;

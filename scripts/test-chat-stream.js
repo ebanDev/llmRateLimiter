@@ -36,15 +36,17 @@ const parseArgs = (argv) => {
 
 const args = parseArgs(process.argv.slice(2));
 
-const model = args.model || args._[0] || "base"; // replace with an actual meta model id
+const model = args.model || args._[0] || "lite"; // replace with an actual meta model id
 const prompt = args.prompt || args._[1] || "Hello, world";
-const tests = String(args.tests || "basic,tools,structured")
+const tests = String(args.tests || "nonstream")
   .split(",")
   .map((t) => t.trim())
   .filter(Boolean);
 
+const acceptEncoding = args["accept-encoding"] || process.env.ACCEPT_ENCODING || "identity";
+
 const key = process.env.ADMIN_TOKEN;
-const baseUrl = args["base-url"] || process.env.API_BASE_URL || "http://localhost:8798";
+const baseUrl = args["base-url"] || process.env.API_BASE_URL || "http://localhost:3000";
 const endpointPrimary = args.endpoint || process.env.API_ENDPOINT || "/api/v1/chat/completions";
 const timeoutMs = Number(args.timeout || process.env.API_TIMEOUT_MS || 60_000);
 const raw = Boolean(args.raw);
@@ -91,7 +93,7 @@ const streamChatCompletion = (payloadObj, { label }) =>
         headers: {
           "content-type": "application/json",
           "content-length": Buffer.byteLength(payload),
-          "accept-encoding": "br, gzip, deflate, identity",
+          "accept-encoding": acceptEncoding,
           ...(key ? { authorization: `Bearer ${key}` } : {}),
         },
       },
@@ -246,6 +248,44 @@ const run = async () => {
       console.log(res.xModel ? `Upstream model: ${res.xModel}` : "Upstream model: (unknown)");
       console.log(res.content.trim() ? res.content.trim() : "(no streamed content)");
       if (!res.content.trim()) failures.push({ test: "basic", reason: "empty content" });
+      continue;
+    }
+
+    if (test === "nonstream" || test === "non-stream") {
+      console.log(`\n=== non-streaming ===`);
+      console.log(`Prompt: ${prompt}`);
+      const res = await fetch(new URL(endpointPrimary, baseUrl).toString(), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "accept-encoding": "br, gzip, deflate, identity",
+          ...(key ? { authorization: `Bearer ${key}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          stream: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        failures.push({ test: "nonstream", reason: `HTTP ${res.status}: ${errText || res.statusText}` });
+        continue;
+      }
+
+      const data = await res.json();
+
+      if (raw) {
+        console.log(`\n--- nonstream (raw response) ---`);
+        console.log(JSON.stringify(data, null, 2));
+        continue;
+      }
+
+      console.log(data["x-model"] ? `Upstream model: ${data["x-model"]}` : "Upstream model: (unknown)");
+      const content = data.choices?.[0]?.message?.content || "";
+      console.log(content.trim() ? content.trim() : "(no content)");
+      if (!content.trim()) failures.push({ test: "nonstream", reason: "empty content" });
       continue;
     }
 

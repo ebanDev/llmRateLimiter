@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   });
 
   const modelRow = db
-    .prepare<{ id: number }>(`SELECT id FROM models WHERE provider_id = ? AND name = ? LIMIT 1`)
+    .prepare<{ id: number }, any>(`SELECT id FROM models WHERE provider_id = ? AND name = ? LIMIT 1`)
     .get(body.provider_id, body.name);
 
   if (modelRow) {

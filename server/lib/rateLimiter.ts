@@ -11,7 +11,7 @@ const windowSeconds: Record<Window, number> = {
 
 const countSince = (modelId: number, seconds: number, kind: string) => {
   const cutoff = Math.floor(Date.now() / 1000) - seconds;
-  const stmt = db.prepare<{ c: number }>(
+  const stmt = db.prepare<{ c: number }, any>(
     `SELECT COUNT(*) as c FROM request_log WHERE model_id = ? AND ts >= ? AND kind = ?`
   );
   const row = stmt.get(modelId, cutoff, kind);
@@ -20,7 +20,7 @@ const countSince = (modelId: number, seconds: number, kind: string) => {
 
 const tokensSince = (modelId: number, seconds: number, kind: string) => {
   const cutoff = Math.floor(Date.now() / 1000) - seconds;
-  const stmt = db.prepare<{ t: number | null }>(
+  const stmt = db.prepare<{ t: number | null }, any>(
     `SELECT SUM(total_tokens) as t FROM request_log WHERE model_id = ? AND ts >= ? AND kind = ?`
   );
   const row = stmt.get(modelId, cutoff, kind);
@@ -60,7 +60,7 @@ export const isRateLimited = (
     if (!cap) return { ok: true };
     const used = countSince(modelId, windowSeconds[window], kind);
     if (used < cap) return { ok: true };
-    const oldestStmt = db.prepare<{ ts: number }>(
+    const oldestStmt = db.prepare<{ ts: number }, any>(
       `SELECT ts FROM request_log WHERE model_id = ? AND ts >= ? AND kind = ? ORDER BY ts ASC LIMIT 1`
     );
     const oldest = oldestStmt.get(modelId, now - windowSeconds[window], kind);
@@ -72,7 +72,7 @@ export const isRateLimited = (
     if (!cap) return { ok: true };
     const used = tokensSince(modelId, windowSeconds[window], kind);
     if (used < cap) return { ok: true };
-    const oldestStmt = db.prepare<{ ts: number }>(
+    const oldestStmt = db.prepare<{ ts: number }, any>(
       `SELECT ts FROM request_log WHERE model_id = ? AND ts >= ? AND kind = ? ORDER BY ts ASC LIMIT 1`
     );
     const oldest = oldestStmt.get(modelId, now - windowSeconds[window], kind);
@@ -114,7 +114,8 @@ export const usageSummary = () => {
         tokens_1d: number | null;
         tokens_30d: number | null;
         tokens: number | null;
-      }
+      },
+      any
     >(
       `
       WITH base AS (

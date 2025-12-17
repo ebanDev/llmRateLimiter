@@ -259,9 +259,7 @@ export default defineEventHandler(async (event) => {
   }
 
   setResponseStatus(event, upstream.status);
-  upstream.headers.forEach((value, key) => {
-    setResponseHeader(event, key, value);
-  });
+  setResponseHeader(event, "content-type", "application/json; charset=utf-8");
 
   if (parsed) {
     return { ...parsed, "x-model": chosen.name };
