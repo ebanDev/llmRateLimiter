@@ -1,10 +1,11 @@
-# LLM Rate Limiter
+# MetaLLM
 
 Tiny, transparent OpenAI-style completions proxy that:
 - Keeps a hot SQLite WAL-backed database in RAM while persisting to `data/rate_limits.db`.
 - Tracks per-model usage and rate limits (per minute / hour / day / month) for completions, and per-provider limits for search.
 - Lets you grade models and route a meta-model name to the best available candidate; if the top choice is throttled it falls back automatically.
 - Ships with a lightweight web UI to manage providers, models, limits, and see live counters.
+- Handles both direct OpenAI-compatible providers and OpenRouter provider-pinned routing (use provider IDs prefixed with `openrouter-`). Fetch the OpenRouter provider/model directory via `/api/openrouter/providers` to seed records quickly.
 
 ## Stack
 - Nuxt 4 + Nuxt UI v4
@@ -33,6 +34,11 @@ The dev server listens on `http://localhost:3000` by default. Override with `POR
 - **Provider**: base URL + API key (e.g., `openai`, `anthropic`).  
 - **Model**: concrete model name tied to a provider plus limits and grade/priority.  
 - **Meta-model**: friendly alias (e.g., `base`) mapped to an ordered list of models. Routing picks the highest-graded candidate that is not rate-limited.
+
+## OpenRouter providers
+- Register OpenRouter providers with IDs prefixed by `openrouter-` (for example, `openrouter-anthropic`) and `https://openrouter.ai/api/v1` as the base URL.
+- Requests to these providers automatically include OpenRouter headers (`Referer`, `X-Title`) and set provider preferences (`order` + `allow_fallbacks=false`) so calls are pinned to the intended upstream provider per the routing docs.
+- Use `GET /api/openrouter/models` (admin-only) to list models, then `GET /api/openrouter/endpoints?model=<id>` to pick a specific provider endpoint for that model.
 
 ## HTTP Surface
 - `POST /v1/chat/completions` — drop-in proxy. Body must include `model`.  

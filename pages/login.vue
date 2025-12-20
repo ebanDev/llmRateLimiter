@@ -26,11 +26,11 @@ const submit = async () => {
         <div class="p-10 md:p-12 space-y-6">
           <div class="flex items-center gap-3">
             <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 grid place-items-center text-white font-bold text-xl">
-              RL
+              ML
             </div>
             <div>
               <p class="text-xs uppercase tracking-wide text-slate-500">Admin Access</p>
-              <h1 class="text-2xl font-semibold">LLM Rate Limiter Console</h1>
+              <h1 class="text-2xl font-semibold">MetaLLM Console</h1>
             </div>
           </div>
           <div class="space-y-3 text-sm text-slate-600">

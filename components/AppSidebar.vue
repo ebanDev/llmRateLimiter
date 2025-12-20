@@ -21,10 +21,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
     {
       label: "GitHub",
       icon: "ph:github-logo",
-      to: "https://github.com/ebanDev/llmRateLimiter",
+      to: "https://github.com/ebanDev/metallm",
       target: "_blank",
     },
   ],
+  [],
 ]);
 </script>
 
@@ -34,11 +35,11 @@ const items = computed<NavigationMenuItem[][]>(() => [
       <div class="flex items-center gap-3">
         <div
           class="h-9 w-9 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 grid place-items-center text-white font-semibold">
-          RL
+          ML
         </div>
         <div v-if="!collapsed" class="leading-tight">
           <p class="text-[11px] uppercase tracking-wide text-slate-500">Console</p>
-          <p class="text-base font-semibold text-slate-900">LLM Rate Limiter</p>
+          <p class="text-base font-semibold text-slate-900">MetaLLM</p>
         </div>
       </div>
     </template>

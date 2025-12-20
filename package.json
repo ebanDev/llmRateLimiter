@@ -1,5 +1,5 @@
 {
-  "name": "llmratelimiter",
+  "name": "metallm",
   "type": "module",
   "private": true,
   "scripts": {

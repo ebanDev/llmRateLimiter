@@ -5,6 +5,7 @@ import { computed, reactive, ref, watch } from "vue";
 
 const { data, refresh, pending } = await useFetch("/api/config");
 
+const OPENROUTER_PREFIX = "openrouter-";
 const providers = computed(() => data.value?.providers ?? []);
 const providerOptions = computed(() => providers.value.map((p: any) => ({ label: p.display_name || p.id, value: p.id })));
 
@@ -24,7 +25,89 @@ const modelForm = reactive({
 
 const selectedProvider = ref("");
 const editingModelId = ref<number | null>(null);
+const selectedProviderIsOpenRouter = computed(() => selectedProvider.value?.startsWith(OPENROUTER_PREFIX));
 const providerModels = reactive<Record<string, { pending: boolean; error: string | null; data: any[]; tried?: boolean }>>({});
+const openRouterModels = reactive<{
+  pending: boolean;
+  error: string | null;
+  models: { id?: string; name?: string }[];
+  fetchedAt: string | null;
+}>({
+  pending: false,
+  error: null,
+  models: [],
+  fetchedAt: null,
+});
+const openRouterEndpoints = reactive<Record<
+  string,
+  {
+    pending: boolean;
+    error: string | null;
+    endpoints: any[];
+    providers: { id: string; slug: string; name: string; provider_name?: string | null; tag?: string | null }[];
+    fetchedAt: string | null;
+  }
+>>({});
+const selectedOpenRouterModel = ref("");
+const parseOpenRouterModel = (id: string) => {
+  const clean = id.includes(":") ? id.split(":")[0] : id;
+  const [author, ...rest] = clean.split("/");
+  const slug = rest.join("/");
+  return { author, slug };
+};
+
+const loadOpenRouterModels = async () => {
+  if (openRouterModels.pending) return;
+
+  openRouterModels.pending = true;
+  openRouterModels.error = null;
+  try {
+    const res = await $fetch<{ models: { id?: string; name?: string }[]; fetched_at?: string }>("/api/openrouter/models");
+    openRouterModels.models = res?.models ?? [];
+    openRouterModels.fetchedAt = res?.fetched_at ?? null;
+    if (!selectedOpenRouterModel.value && openRouterModels.models.length) {
+      selectedOpenRouterModel.value = openRouterModels.models[0].id || "";
+    }
+  } catch (err: any) {
+    openRouterModels.error =
+      err?.data?.statusMessage || err?.data?.message || err?.message || "Failed to load OpenRouter models";
+  } finally {
+    openRouterModels.pending = false;
+  }
+};
+
+const loadOpenRouterEndpoints = async (modelId: string) => {
+  if (!modelId) return;
+  const { author, slug } = parseOpenRouterModel(modelId);
+  if (!openRouterEndpoints[modelId]) {
+    openRouterEndpoints[modelId] = {
+      pending: false,
+      error: null,
+      endpoints: [],
+      providers: [],
+      fetchedAt: null,
+    };
+  }
+  if (openRouterEndpoints[modelId].pending) return;
+
+  openRouterEndpoints[modelId].pending = true;
+  openRouterEndpoints[modelId].error = null;
+  try {
+    const res = await $fetch<{
+      endpoints: any[];
+      providers: { id: string; slug: string; name: string; provider_name?: string | null; tag?: string | null }[];
+      fetched_at?: string;
+    }>(`/api/openrouter/models/${encodeURIComponent(author)}/${encodeURIComponent(slug)}/endpoints`);
+    openRouterEndpoints[modelId].endpoints = res?.endpoints ?? [];
+    openRouterEndpoints[modelId].providers = res?.providers ?? [];
+    openRouterEndpoints[modelId].fetchedAt = res?.fetched_at ?? null;
+  } catch (err: any) {
+    openRouterEndpoints[modelId].error =
+      err?.data?.statusMessage || err?.data?.message || err?.message || "Failed to load OpenRouter endpoints";
+  } finally {
+    openRouterEndpoints[modelId].pending = false;
+  }
+};
 
 const fetchProviderModels = async (providerId: string, opts?: { skipIfFetched?: boolean }) => {
   if (!providerId) return;
@@ -43,6 +126,22 @@ const fetchProviderModels = async (providerId: string, opts?: { skipIfFetched?: 
   providerModels[providerId].tried = true;
 
   try {
+    if (providerId.startsWith(OPENROUTER_PREFIX)) {
+      const matches = Object.entries(openRouterEndpoints).filter(([, val]) =>
+        val.providers.some((p) => p.id === providerId)
+      );
+      if (!matches.length) {
+        providerModels[providerId].error = "Select an OpenRouter model and fetch its endpoints to list provider IDs";
+        return;
+      }
+      providerModels[providerId].data = matches.flatMap(([modelId, val]) =>
+        val.providers
+          .filter((p) => p.id === providerId)
+          .map((p) => ({ id: `${p.id} (${modelId})` }))
+      );
+      return;
+    }
+
     const url = `${provider.base_url.replace(/\/+$/, "")}/models`;
     const res = await $fetch<any>(url, {
       headers: provider.api_key ? { Authorization: `Bearer ${provider.api_key}` } : undefined,
@@ -70,10 +169,25 @@ watch(
   selectedProvider,
   (id) => {
     modelForm.provider_id = id;
+    if (id?.startsWith(OPENROUTER_PREFIX)) {
+      if (selectedOpenRouterModel.value) {
+        loadOpenRouterEndpoints(selectedOpenRouterModel.value);
+      }
+    }
     if (id) fetchProviderModels(id, { skipIfFetched: true });
   },
   { immediate: true }
 );
+
+watch(
+  selectedOpenRouterModel,
+  (model) => {
+    if (model) loadOpenRouterEndpoints(model);
+  },
+  { immediate: true }
+);
+
+loadOpenRouterModels();
 
 const useSuggestion = (name: string) => {
   modelForm.name = name;
@@ -157,6 +271,63 @@ const deleteModel = async (id: number) => {
               title="Editing model"
               :description="`Updating limits/capabilities for ${modelForm.provider_id}/${modelForm.name} (#${editingModelId})`"
             />
+            <UAlert
+              v-else-if="selectedProviderIsOpenRouter"
+              color="primary"
+              variant="subtle"
+              title="OpenRouter provider detected"
+              description="Select an OpenRouter model below, fetch its endpoints, then choose a provider-prefixed ID."
+            />
+
+            <div v-if="selectedProviderIsOpenRouter" class="space-y-2 rounded-lg border border-purple-100 bg-purple-50/60 p-3">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+                <USelect
+                  v-model="selectedOpenRouterModel"
+                  :items="openRouterModels.models.map((m) => ({ label: m.name || m.id, value: m.id }))"
+                  placeholder="Select OpenRouter model"
+                  :loading="openRouterModels.pending"
+                />
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="ghost"
+                  icon="ph:cloud-arrow-down"
+                  :loading="selectedOpenRouterModel && openRouterEndpoints[selectedOpenRouterModel]?.pending"
+                  :disabled="!selectedOpenRouterModel"
+                  @click="selectedOpenRouterModel && loadOpenRouterEndpoints(selectedOpenRouterModel)"
+                >
+                  Fetch endpoints
+                </UButton>
+                <span class="text-xs text-slate-500" v-if="selectedOpenRouterModel && openRouterEndpoints[selectedOpenRouterModel]?.fetchedAt">
+                  Updated {{ new Date(openRouterEndpoints[selectedOpenRouterModel].fetchedAt || '').toLocaleTimeString() }}
+                </span>
+              </div>
+              <div class="rounded-md border border-purple-100 bg-white/70 p-3 text-xs text-slate-700">
+                <div v-if="openRouterModels.pending" class="flex items-center gap-2 text-purple-700">
+                  <UIcon name="ph:circle-notch" class="h-4 w-4 animate-spin" /> Fetching models…
+                </div>
+                <div v-else-if="openRouterModels.error" class="text-red-600">{{ openRouterModels.error }}</div>
+                <div v-else-if="selectedOpenRouterModel && openRouterEndpoints[selectedOpenRouterModel]?.pending" class="flex items-center gap-2 text-purple-700">
+                  <UIcon name="ph:circle-notch" class="h-4 w-4 animate-spin" /> Fetching endpoints…
+                </div>
+                <div v-else-if="selectedOpenRouterModel && openRouterEndpoints[selectedOpenRouterModel]?.error" class="text-red-600">
+                  {{ openRouterEndpoints[selectedOpenRouterModel].error }}
+                </div>
+                <div v-else-if="selectedOpenRouterModel && openRouterEndpoints[selectedOpenRouterModel]?.providers?.length" class="flex flex-wrap gap-2">
+                  <UBadge
+                    v-for="p in openRouterEndpoints[selectedOpenRouterModel].providers"
+                    :key="p.id"
+                    color="neutral"
+                    variant="soft"
+                    class="cursor-pointer"
+                    @click="modelForm.provider_id = p.id; useSuggestion(p.name)"
+                  >
+                    {{ p.id }}
+                  </UBadge>
+                </div>
+                <div v-else class="text-slate-500">Select a model and fetch endpoints to see provider IDs.</div>
+              </div>
+            </div>
 
             <div class="rounded-lg border border-purple-100 bg-white p-3">
               <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">

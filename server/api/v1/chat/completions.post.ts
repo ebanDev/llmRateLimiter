@@ -9,9 +9,11 @@ import {
 } from "h3";
 import {
   metaCandidates,
+  modelByName,
   modelWithLimits,
 } from "../../../lib/providerRegistry";
 import { isRateLimited, recordRequest } from "../../../lib/rateLimiter";
+import { buildOpenRouterHeaders, isOpenRouterProvider, openRouterProviderSlug } from "../../../lib/openrouter";
 
 const completionsPath = "/chat/completions";
 
@@ -98,9 +100,10 @@ export default defineEventHandler(async (event) => {
   const needsImageCapableModel = conversationHasImageInputs(body);
 
   // Resolve model or meta
-  const candidates = metaCandidates(requestedModel);
+  const directMatch = modelByName(requestedModel);
+  const candidates = directMatch ? [directMatch] : metaCandidates(requestedModel);
   if (!candidates.length) {
-    throw createError({ statusCode: 404, statusMessage: `No meta-model '${requestedModel}'` });
+    throw createError({ statusCode: 404, statusMessage: `No model or meta-model '${requestedModel}'` });
   }
 
   const routedCandidates = needsImageCapableModel
@@ -110,7 +113,7 @@ export default defineEventHandler(async (event) => {
   if (!routedCandidates.length) {
     throw createError({
       statusCode: 400,
-      statusMessage: `No image-capable targets for meta-model '${requestedModel}'`,
+      statusMessage: `No image-capable targets for '${requestedModel}'`,
     });
   }
 
@@ -154,6 +157,9 @@ export default defineEventHandler(async (event) => {
   const headers: Record<string, string> = {
     "content-type": "application/json",
   };
+  if (isOpenRouterProvider((chosen as any).provider_id)) {
+    Object.assign(headers, buildOpenRouterHeaders());
+  }
   const incomingAuth = getRequestHeader(event, "authorization");
   const authHeader = chosen.api_key ? `Bearer ${chosen.api_key}` : incomingAuth;
   if (authHeader) headers.authorization = authHeader;
@@ -161,10 +167,30 @@ export default defineEventHandler(async (event) => {
   console.log(`→ Forwarding request to model '${chosen.name}' at ${url}`);
   let upstream;
   try {
+    const providerSlug = isOpenRouterProvider((chosen as any).provider_id)
+      ? openRouterProviderSlug((chosen as any).provider_id)
+      : null;
+    const mergedProviderPrefs = providerSlug
+      ? (() => {
+          const incomingProvider = body?.provider && typeof body.provider === "object" ? { ...body.provider } : {};
+          const order = Array.isArray(incomingProvider.order) ? incomingProvider.order.slice() : [];
+          if (!order.includes(providerSlug)) order.unshift(providerSlug);
+          return {
+            ...incomingProvider,
+            order,
+            allow_fallbacks: false,
+          };
+        })()
+      : body?.provider;
+
     upstream = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({ ...body, model: chosen.name }),
+      body: JSON.stringify({
+        ...body,
+        model: chosen.name,
+        ...(providerSlug ? { provider: mergedProviderPrefs } : {}),
+      }),
     });
   } catch (err: any) {
     throw createError({ statusCode: 502, statusMessage: `Upstream request failed: ${err?.message}` });
