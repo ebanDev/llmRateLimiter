@@ -25,6 +25,7 @@ export const ensureSchema = () => {
       display_name TEXT,
       base_url TEXT NOT NULL,
       api_key TEXT,
+      kind TEXT DEFAULT 'openai',
       active INTEGER DEFAULT 1
     );
     CREATE TABLE IF NOT EXISTS models (
@@ -34,6 +35,7 @@ export const ensureSchema = () => {
       grade INTEGER DEFAULT 0,
       priority INTEGER DEFAULT 0,
       supports_images INTEGER DEFAULT 0,
+      openrouter_provider TEXT,
       active INTEGER DEFAULT 1,
       UNIQUE(provider_id, name)
     );
@@ -106,6 +108,15 @@ export const ensureSchema = () => {
   } catch {}
   try {
     db.run(`ALTER TABLE models ADD COLUMN supports_images INTEGER DEFAULT 0`);
+  } catch {}
+  try {
+    db.run(`ALTER TABLE models ADD COLUMN openrouter_provider TEXT`);
+  } catch {}
+  try {
+    db.run(`ALTER TABLE providers ADD COLUMN kind TEXT DEFAULT 'openai'`);
+  } catch {}
+  try {
+    db.run(`UPDATE providers SET kind = 'openrouter' WHERE id LIKE 'openrouter-%' AND (kind IS NULL OR kind = '')`);
   } catch {}
   try {
     db.run(`CREATE TABLE IF NOT EXISTS search_providers (

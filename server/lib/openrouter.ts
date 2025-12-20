@@ -2,6 +2,7 @@ import { createError } from "h3";
 
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export const OPENROUTER_PROVIDER_PREFIX = "openrouter-";
+export const OPENROUTER_AUTO_PROVIDER_ID = "openrouter";
 const OPENROUTER_REFERER = "https://metallm.app";
 const OPENROUTER_TITLE = "MetaLLM";
 
@@ -21,10 +22,12 @@ export type OpenRouterEndpoint = {
 };
 
 export const isOpenRouterProvider = (providerId?: string) =>
-  Boolean(providerId?.startsWith(OPENROUTER_PROVIDER_PREFIX));
+  Boolean(providerId === OPENROUTER_AUTO_PROVIDER_ID || providerId?.startsWith(OPENROUTER_PROVIDER_PREFIX));
 
-export const openRouterProviderSlug = (providerId: string) =>
-  providerId.replace(OPENROUTER_PROVIDER_PREFIX, "");
+export const openRouterProviderSlug = (providerId: string) => {
+  if (providerId === OPENROUTER_AUTO_PROVIDER_ID) return "auto";
+  return providerId.replace(OPENROUTER_PROVIDER_PREFIX, "");
+};
 
 export const buildOpenRouterHeaders = (providerSlug?: string) => {
   const headers: Record<string, string> = {

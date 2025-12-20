@@ -49,5 +49,10 @@ export default defineAppConfig({
       upload: 'ph:upload-bold',
       warning: 'ph:warning-bold',
     },
+    selectMenu: {
+      slots: {
+        content: 'min-w-fit'
+      }
+    }
   }
 });

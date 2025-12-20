@@ -36,7 +36,7 @@ const parseArgs = (argv) => {
 
 const args = parseArgs(process.argv.slice(2));
 
-const model = args.model || args._[0] || "lite"; // replace with an actual meta model id
+const model = args.model || args._[0] || "base"; // replace with an actual meta model id
 const prompt = args.prompt || args._[1] || "Hello, world";
 const tests = String(args.tests || "nonstream")
   .split(",")

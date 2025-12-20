@@ -9,10 +9,16 @@ export default defineEventHandler(async (event) => {
     display_name?: string;
     base_url?: string;
     api_key?: string;
+    kind?: "openai" | "openrouter" | string;
   }>(event);
 
   if (!body?.id || !body?.base_url) {
     throw createError({ statusCode: 400, statusMessage: "id and base_url are required" });
+  }
+
+  const kind = body.kind === "openrouter" ? "openrouter" : "openai";
+  if (kind === "openrouter") {
+    throw createError({ statusCode: 400, statusMessage: "OpenRouter providers are managed from Models" });
   }
 
   upsertProvider({
@@ -20,6 +26,7 @@ export default defineEventHandler(async (event) => {
     display_name: body.display_name ?? null,
     base_url: body.base_url,
     api_key: body.api_key ?? null,
+    kind,
     active: 1,
   });
 

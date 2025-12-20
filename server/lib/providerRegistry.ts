@@ -1,10 +1,12 @@
 import { db, ensureSchema } from "../db";
+import { OPENROUTER_BASE_URL, OPENROUTER_AUTO_PROVIDER_ID } from "./openrouter";
 
 export type ProviderRecord = {
   id: string;
   display_name?: string | null;
   base_url: string;
   api_key?: string | null;
+  kind?: "openai" | "openrouter" | string | null;
   active: number;
 };
 
@@ -14,6 +16,7 @@ export type ModelRecord = {
   name: string;
   supports_images: number;
   active: number;
+  openrouter_provider?: string | null;
   per_minute?: number | null;
   per_hour?: number | null;
   per_day?: number | null;
@@ -22,15 +25,23 @@ export type ModelRecord = {
 
 ensureSchema();
 
+export const ensureOpenRouterProvider = () => {
+  db.prepare(
+    `INSERT OR IGNORE INTO providers(id, display_name, base_url, api_key, kind, active)
+     VALUES (@id, 'OpenRouter (auto)', @base_url, @api_key, 'openrouter', 1)`
+  ).run({ id: OPENROUTER_AUTO_PROVIDER_ID, base_url: OPENROUTER_BASE_URL, api_key: process.env.OPENROUTER_API_KEY || null });
+};
+
 export const upsertProvider = (provider: ProviderRecord) => {
   db.prepare(
     `
-    INSERT INTO providers(id, display_name, base_url, api_key, active)
-    VALUES (@id, @display_name, @base_url, @api_key, @active)
+    INSERT INTO providers(id, display_name, base_url, api_key, kind, active)
+    VALUES (@id, @display_name, @base_url, @api_key, @kind, @active)
     ON CONFLICT(id) DO UPDATE SET
       display_name=excluded.display_name,
       base_url=excluded.base_url,
       api_key=excluded.api_key,
+      kind=excluded.kind,
       active=excluded.active
     `
   ).run({
@@ -38,6 +49,7 @@ export const upsertProvider = (provider: ProviderRecord) => {
     display_name: provider.display_name ?? null,
     base_url: provider.base_url,
     api_key: provider.api_key ?? null,
+    kind: provider.kind ?? "openai",
     active: provider.active ?? 1,
   });
 };
@@ -47,20 +59,23 @@ export const upsertModel = (model: {
   name: string;
   active?: number;
   supports_images?: number;
+  openrouter_provider?: string | null;
 }) => {
   db.prepare(
     `
-    INSERT INTO models(provider_id, name, active, supports_images)
-    VALUES (@provider_id, @name, @active, @supports_images)
+    INSERT INTO models(provider_id, name, active, supports_images, openrouter_provider)
+    VALUES (@provider_id, @name, @active, @supports_images, @openrouter_provider)
     ON CONFLICT(provider_id, name) DO UPDATE SET
       active=excluded.active,
-      supports_images=excluded.supports_images
+      supports_images=excluded.supports_images,
+      openrouter_provider=excluded.openrouter_provider
     `
   ).run({
     provider_id: model.provider_id,
     name: model.name,
     active: model.active ?? 1,
     supports_images: model.supports_images ?? 0,
+    openrouter_provider: model.openrouter_provider ?? null,
   });
 };
 
@@ -134,7 +149,7 @@ export const listModels = () => {
       tokens_per_month?: number | null;
     }, any>(
       `
-      SELECT m.id, m.provider_id, m.name, m.supports_images, m.active,
+      SELECT m.id, m.provider_id, m.name, m.supports_images, m.active, m.openrouter_provider,
              rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
              rl.tokens_per_minute, rl.tokens_per_hour, rl.tokens_per_day, rl.tokens_per_month
       FROM models m
@@ -149,7 +164,7 @@ export const listActiveModels = () => {
   return db
     .prepare<ModelRecord & { provider_active: number; tokens_per_minute?: number | null; tokens_per_hour?: number | null; tokens_per_day?: number | null; tokens_per_month?: number | null }, any>(
       `
-      SELECT m.id, m.provider_id, m.name, m.supports_images, m.active,
+      SELECT m.id, m.provider_id, m.name, m.supports_images, m.active, m.openrouter_provider,
              rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
              rl.tokens_per_minute, rl.tokens_per_hour, rl.tokens_per_day, rl.tokens_per_month,
              p.active as provider_active
@@ -198,7 +213,7 @@ export const listActiveMetaModels = () => {
 export const modelByName = (name: string): (ModelRecord & ProviderRecord) | null => {
   const stmt = db.prepare<ModelRecord & ProviderRecord, any>(
     `
-    SELECT m.*, p.base_url, p.api_key, p.active as provider_active, p.display_name
+    SELECT m.*, p.base_url, p.api_key, p.active as provider_active, p.display_name, p.kind
     FROM models m
     JOIN providers p ON p.id = m.provider_id
     WHERE m.name = ? AND m.active = 1 AND p.active = 1
@@ -212,7 +227,7 @@ export const metaCandidates = (meta: string): (ModelRecord & ProviderRecord & { 
   return db
     .prepare<ModelRecord & ProviderRecord & { position: number; provider_active: number }, any>(
       `
-      SELECT m.*, mt.position, p.base_url, p.api_key, p.active as provider_active, p.display_name
+      SELECT m.*, mt.position, p.base_url, p.api_key, p.active as provider_active, p.display_name, p.kind
       FROM meta_model_targets mt
       JOIN models m ON m.id = mt.model_id
       JOIN providers p ON p.id = m.provider_id
@@ -228,7 +243,7 @@ export const modelWithLimits = (modelId: number): (ModelRecord & ProviderRecord)
     `
     SELECT m.*, rl.per_minute, rl.per_hour, rl.per_day, rl.per_month,
            rl.tokens_per_minute, rl.tokens_per_hour, rl.tokens_per_day, rl.tokens_per_month,
-           p.base_url, p.api_key, p.active as provider_active, p.display_name
+           p.base_url, p.api_key, p.active as provider_active, p.display_name, p.kind
     FROM models m
     JOIN providers p ON p.id = m.provider_id
     LEFT JOIN rate_limits rl ON rl.model_id = m.id

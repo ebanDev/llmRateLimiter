@@ -10,8 +10,8 @@ const items = computed<NavigationMenuItem[][]>(() => [
     { label: "Usage", icon: "ph:chart-line", to: "/usage", active: route.path === "/usage" },
     {
       label: "LLMs", icon: "ph:robot", defaultOpen: true, children: [
-        { label: "Providers", icon: "ph:plugs-connected", to: "/providers", active: route.path === "/providers" },
         { label: "Models", icon: "ph:brain", to: "/models", active: route.path === "/models" },
+          { label: "Providers", icon: "ph:plugs-connected", to: "/providers", active: route.path === "/providers" },
         { label: "Meta Routing", icon: "ph:arrows-merge", to: "/meta", active: route.path === "/meta" },
       ]
     },

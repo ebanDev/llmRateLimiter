@@ -1,11 +1,12 @@
 import { defineEventHandler } from "h3";
-import { listMetaModels, listModels, listProviders } from "../lib/providerRegistry";
+import { ensureOpenRouterProvider, listMetaModels, listModels, listProviders } from "../lib/providerRegistry";
 import { listSearchProviders } from "../lib/searchRegistry";
 import { usageSummary } from "../lib/rateLimiter";
 import { requireAdmin } from "../utils/auth";
 
 export default defineEventHandler((event) => {
   requireAdmin(event);
+  ensureOpenRouterProvider();
   return {
     providers: listProviders(),
     models: listModels(),

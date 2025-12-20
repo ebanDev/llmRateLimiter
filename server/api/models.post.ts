@@ -1,7 +1,8 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { db } from "../db";
-import { upsertModel, upsertRateLimit } from "../lib/providerRegistry";
+import { ensureOpenRouterProvider, upsertModel, upsertRateLimit, upsertProvider } from "../lib/providerRegistry";
 import { requireAdmin } from "../utils/auth";
+import { OPENROUTER_AUTO_PROVIDER_ID, OPENROUTER_BASE_URL, OPENROUTER_PROVIDER_PREFIX } from "../lib/openrouter";
 
 export default defineEventHandler(async (event) => {
   requireAdmin(event);
@@ -9,6 +10,7 @@ export default defineEventHandler(async (event) => {
     provider_id?: string;
     name?: string;
     supports_images?: boolean | number | string;
+    openrouter_provider?: string;
     per_minute?: number | string;
     per_hour?: number | string;
     per_day?: number | string;
@@ -23,6 +25,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "provider_id and name are required" });
   }
 
+  if (body.provider_id === OPENROUTER_AUTO_PROVIDER_ID) {
+    ensureOpenRouterProvider();
+  }
+
+  if (body.provider_id.startsWith(OPENROUTER_PROVIDER_PREFIX)) {
+    const providerRow = db.prepare(`SELECT id FROM providers WHERE id = ? LIMIT 1`).get(body.provider_id);
+    if (!providerRow) {
+      upsertProvider({
+        id: body.provider_id,
+        display_name: body.provider_id.replace(OPENROUTER_PROVIDER_PREFIX, "OpenRouter/"),
+        base_url: OPENROUTER_BASE_URL,
+        api_key: process.env.OPENROUTER_API_KEY || null,
+        kind: "openrouter",
+        active: 1,
+      });
+    }
+  }
+
   const supportsImages =
     body.supports_images === true ||
     body.supports_images === 1 ||
@@ -34,6 +54,7 @@ export default defineEventHandler(async (event) => {
     name: body.name,
     active: 1,
     supports_images: supportsImages ? 1 : 0,
+    openrouter_provider: body.openrouter_provider ?? null,
   });
 
   const modelRow = db

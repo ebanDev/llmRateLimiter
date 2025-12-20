@@ -167,14 +167,17 @@ export default defineEventHandler(async (event) => {
   console.log(`→ Forwarding request to model '${chosen.name}' at ${url}`);
   let upstream;
   try {
-    const providerSlug = isOpenRouterProvider((chosen as any).provider_id)
+    const openRouterPreference = isOpenRouterProvider((chosen as any).provider_id)
       ? openRouterProviderSlug((chosen as any).provider_id)
       : null;
-    const mergedProviderPrefs = providerSlug
+    const openRouterOverride = isOpenRouterProvider((chosen as any).provider_id)
+      ? openRouterPreference || (chosen as any).openrouter_provider
+      : null;
+    const mergedProviderPrefs = openRouterOverride && openRouterOverride !== "auto"
       ? (() => {
           const incomingProvider = body?.provider && typeof body.provider === "object" ? { ...body.provider } : {};
           const order = Array.isArray(incomingProvider.order) ? incomingProvider.order.slice() : [];
-          if (!order.includes(providerSlug)) order.unshift(providerSlug);
+          if (!order.includes(openRouterOverride)) order.unshift(openRouterOverride);
           return {
             ...incomingProvider,
             order,
@@ -189,7 +192,7 @@ export default defineEventHandler(async (event) => {
       body: JSON.stringify({
         ...body,
         model: chosen.name,
-        ...(providerSlug ? { provider: mergedProviderPrefs } : {}),
+        ...(openRouterOverride ? { provider: mergedProviderPrefs } : {}),
       }),
     });
   } catch (err: any) {
