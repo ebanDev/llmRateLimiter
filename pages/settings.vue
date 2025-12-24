@@ -115,7 +115,7 @@ const onFileChange = async (e: Event) => {
     />
 
     <div class="grid gap-4 lg:grid-cols-2">
-      <UCard class="border-purple-100 bg-white">
+      <UCard class="border-primary-100 bg-white">
         <template #header>
           <div class="space-y-1">
             <h2 class="text-lg font-semibold text-slate-900">Export database</h2>
@@ -130,7 +130,7 @@ const onFileChange = async (e: Event) => {
         </div>
       </UCard>
 
-      <UCard class="border-purple-100 bg-white">
+      <UCard class="border-primary-100 bg-white">
         <template #header>
           <div class="space-y-1">
             <h2 class="text-lg font-semibold text-slate-900">Import database</h2>

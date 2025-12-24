@@ -158,11 +158,11 @@ watch(
       <UCard
         v-for="provider in providers"
         :key="provider.id"
-        class="border-purple-100 bg-white flex flex-col"
+        class="border-primary-100 bg-white flex flex-col"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="h-11 w-11 rounded-xl bg-purple-50 text-purple-600 grid place-items-center">
+            <div class="h-11 w-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center">
               <UIcon :name="providerIcon(provider.id)" class="h-5 w-5" />
             </div>
             <div class="space-y-0.5">
@@ -188,18 +188,18 @@ watch(
 
         <div class="mt-3 space-y-2 text-sm text-slate-600">
           <div class="flex items-center gap-2">
-            <UIcon name="ph:link" class="h-4 w-4 text-purple-500" />
+            <UIcon name="ph:link" class="h-4 w-4 text-primary-500" />
             <span class="truncate" :title="provider.base_url">{{ provider.base_url }}</span>
           </div>
           <div class="flex items-center gap-2 text-xs text-slate-500">
-            <UIcon name="ph:key" class="h-4 w-4 text-purple-500" />
+            <UIcon name="ph:key" class="h-4 w-4 text-primary-500" />
             <span>{{ provider.api_key ? 'API key stored' : 'No API key' }}</span>
           </div>
         </div>
 
         <div class="mt-4 flex items-center justify-between text-sm text-slate-700">
           <div class="flex items-center gap-2">
-            <UIcon name="ph:stack" class="h-4 w-4 text-purple-500" />
+            <UIcon name="ph:stack" class="h-4 w-4 text-primary-500" />
             <span class="font-medium">Models</span>
           </div>
           <div class="flex items-center gap-2">
@@ -210,8 +210,8 @@ watch(
           </div>
         </div>
 
-        <div class="mt-2 min-h-[48px] rounded-lg border border-dashed border-purple-100 bg-purple-50/40 p-3 text-xs text-slate-700">
-          <div v-if="modelResults[provider.id]?.pending" class="flex items-center gap-2 text-purple-600">
+        <div class="mt-2 min-h-[48px] rounded-lg border border-dashed border-primary-100 bg-primary-50/40 p-3 text-xs text-slate-700">
+          <div v-if="modelResults[provider.id]?.pending" class="flex items-center gap-2 text-primary-600">
             <UIcon name="ph:circle-notch" class="h-4 w-4 animate-spin" />
             Fetching models…
           </div>
@@ -260,7 +260,7 @@ watch(
       </UCard>
     </div>
 
-    <div v-if="!providers.length && !pending" class="text-center text-slate-500 border border-dashed border-purple-100 rounded-xl p-8">
+    <div v-if="!providers.length && !pending" class="text-center text-slate-500 border border-dashed border-primary-100 rounded-xl p-8">
       No providers yet. Click “Add provider” to create one.
     </div>
   </UContainer>

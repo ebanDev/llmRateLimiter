@@ -34,7 +34,7 @@ const submitSearchProvider = async () => {
       <UButton color="neutral" variant="ghost" icon="ph:arrows-clockwise" :loading="pending" @click="refresh">Refresh</UButton>
     </div>
 
-    <UCard class="border-purple-100 bg-white">
+    <UCard class="border-primary-100 bg-white">
       <div class="grid gap-6 lg:grid-cols-[420px,1fr]">
         <div class="space-y-3">
           <UForm :state="searchProviderForm" @submit.prevent="submitSearchProvider" class="space-y-3">
@@ -88,7 +88,7 @@ const submitSearchProvider = async () => {
               { id: 'limits', accessorKey: 'limits', header: 'Limits' },
               { id: 'active', accessorKey: 'active', header: 'Active' },
             ]"
-            class="overflow-hidden rounded-xl border border-purple-100"
+            class="overflow-hidden rounded-xl border border-primary-100"
           >
             <template #limits-data="{ row }">
               <span class="font-mono text-xs">

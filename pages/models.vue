@@ -419,7 +419,7 @@ const deleteModel = async (id: number) => {
       <UButton color="neutral" variant="ghost" icon="ph:arrows-clockwise" :loading="pending" @click="refresh">Refresh</UButton>
     </div>
 
-    <UCard class="border-purple-100 bg-white">
+    <UCard class="border-primary-100 bg-white">
       <div class="grid gap-6 lg:grid-cols-[420px,1fr]">
         <div class="space-y-4">
           <UForm :state="modelForm" @submit.prevent="submitModel" class="space-y-3">
@@ -505,7 +505,7 @@ const deleteModel = async (id: number) => {
               :description="`Updating limits/capabilities for ${modelForm.provider_id}/${modelForm.name} (#${editingModelId})`"
             />
 
-            <div class="rounded-lg border border-purple-100 bg-white p-3">
+            <div class="rounded-lg border border-primary-100 bg-white p-3">
               <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
                 <UCheckbox v-model="modelForm.supports_images" />
                 <span>Supports image inputs</span>
@@ -513,7 +513,7 @@ const deleteModel = async (id: number) => {
               <p class="mt-1 text-xs text-slate-500">When a conversation includes images, routing only selects models with this enabled.</p>
             </div>
 
-            <div class="rounded-lg border border-purple-100 bg-purple-50/40 p-3 space-y-3">
+            <div class="rounded-lg border border-primary-100 bg-primary-50/40 p-3 space-y-3">
               <p class="text-xs font-semibold text-slate-700">Request caps (requests)</p>
               <div class="grid grid-cols-2 gap-3">
                 <UFormField label="Per minute" name="per_minute">
@@ -531,7 +531,7 @@ const deleteModel = async (id: number) => {
               </div>
             </div>
 
-            <div class="rounded-lg border border-purple-100 bg-purple-50/40 p-3 space-y-3">
+            <div class="rounded-lg border border-primary-100 bg-primary-50/40 p-3 space-y-3">
               <p class="text-xs font-semibold text-slate-700">Token caps (tokens)</p>
               <div class="grid grid-cols-2 gap-3">
                 <UFormField label="Per minute" name="tokens_per_minute">
@@ -571,7 +571,7 @@ const deleteModel = async (id: number) => {
               { id: 'token_limits', accessorKey: 'token_limits', header: 'Token limits' },
               { id: 'actions', accessorKey: 'actions', header: 'Actions' },
             ]"
-            class="overflow-hidden rounded-xl border border-purple-100"
+            class="overflow-hidden rounded-xl border border-primary-100"
           >
             <template #supports_images-cell="{ row }">
               <UBadge :color="row.original.supports_images ? 'primary' : 'neutral'" variant="subtle">

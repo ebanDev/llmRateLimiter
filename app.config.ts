@@ -1,9 +1,13 @@
 export default defineAppConfig({
-	  ui: {
-	    colors: {
-	      primary: 'lavender',
-      secondary: 'zinc',
-      neutral: 'zinc',
+  ui: {
+    colors: {
+      primary: 'pastel-green',
+      secondary: 'stone',
+      neutral: 'stone',
+      success: 'pastel-green',
+      info: 'stone',
+      warning: 'yellow',
+      error: 'rose',
     },
     icons: {
       arrowDown: 'ph:arrow-down-bold',
@@ -49,9 +53,40 @@ export default defineAppConfig({
       upload: 'ph:upload-bold',
       warning: 'ph:warning-bold',
     },
+    input: {
+      slots: {
+        root: `w-full`,
+      },
+    },
+    button: {
+      variants: {
+        size: {
+          xl: {
+            base: 'px-4 py-2 text-lg gap-2',
+          },
+          lg: {
+            base: 'px-3.5 py-1.75 text-base gap-2',
+          },
+          md: {
+            base: 'px-3 py-1.5 text-md gap-1.5',
+          }
+        }
+      }
+    },
+    pageCard: {
+      slots: {
+        description: 'text-sm text-ui-text-dimmed',
+        container: '!p-5 !flex-row !gap-2',
+      }
+    },
     selectMenu: {
       slots: {
         content: 'min-w-fit'
+      }
+    },
+    dashboardSidebar: {
+      slots: {
+        root: 'bg-muted',
       }
     }
   }

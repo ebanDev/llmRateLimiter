@@ -34,7 +34,7 @@ const items = computed<NavigationMenuItem[][]>(() => [
     <template #header="{ collapsed }">
       <div class="flex items-center gap-3">
         <div
-          class="h-9 w-9 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 grid place-items-center text-white font-semibold">
+          class="h-9 w-9 rounded-2xl bg-gradient-to-br from-primary-300 to-primary-800 grid place-items-center text-white font-semibold">
           ML
         </div>
         <div v-if="!collapsed" class="leading-tight">

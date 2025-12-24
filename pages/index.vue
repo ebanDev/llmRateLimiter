@@ -21,10 +21,10 @@ const stats = computed(() => {
   const models = data.value?.models?.length ?? 0;
   const meta = metaGrouped.value.length;
   return [
-    { label: "Providers", value: providers, icon: "ph:plugs-connected", accent: "from-purple-500 to-fuchsia-500" },
-    { label: "Search Providers", value: searchProviders, icon: "ph:globe-simple", accent: "from-violet-400 to-purple-500" },
-    { label: "Models", value: models, icon: "ph:brain", accent: "from-indigo-400 to-purple-500" },
-    { label: "Meta Targets", value: meta, icon: "ph:arrows-merge", accent: "from-pink-400 to-purple-500" },
+    { label: "Providers", value: providers, icon: "ph:plugs-connected", accent: "from-primary-500 to-fuchsia-500" },
+    { label: "Search Providers", value: searchProviders, icon: "ph:globe-simple", accent: "from-violet-400 to-primary-500" },
+    { label: "Models", value: models, icon: "ph:brain", accent: "from-indigo-400 to-primary-500" },
+    { label: "Meta Targets", value: meta, icon: "ph:arrows-merge", accent: "from-primary-400 to-primary-500" },
   ];
 });
 
@@ -105,7 +105,7 @@ const maxLoadByModelId = computed(() => {
 const indicatorClass = (pct: number) => {
   if (pct >= 100) return "bg-rose-500";
   if (pct >= 80) return "bg-amber-500";
-  if (pct > 0) return "bg-purple-500";
+  if (pct > 0) return "bg-primary-500";
   return "bg-slate-300";
 };
 
@@ -177,7 +177,7 @@ const metaRoutes = computed(() => {
       <div
         v-for="item in stats"
         :key="item.label"
-        class="relative overflow-hidden rounded-2xl border border-purple-100 p-4"
+        class="relative overflow-hidden rounded-2xl border border-primary-200 px-6 py-4"
       >
         <div class="absolute inset-0 opacity-40"></div>
         <div class="relative flex items-center justify-between">
@@ -185,14 +185,14 @@ const metaRoutes = computed(() => {
             <p class="text-xs uppercase tracking-wide text-slate-500">{{ item.label }}</p>
             <p class="text-3xl font-semibold text-slate-900">{{ item.value }}</p>
           </div>
-          <div class="h-10 w-10 rounded-xl bg-purple-50 grid place-items-center text-purple-600">
+          <div class="h-10 w-10 rounded-xl bg-primary-100 grid place-items-center text-primary-600">
             <UIcon :name="item.icon" class="h-5 w-5" />
           </div>
         </div>
       </div>
     </div>
 
-    <UCard class="border-purple-100 bg-white">
+    <UCard class="border-primary-100 bg-white">
       <template #header>
         <div class="flex items-center justify-between">
           <div>
@@ -207,7 +207,7 @@ const metaRoutes = computed(() => {
         <div
           v-for="route in metaRoutes"
           :key="route.meta"
-          class="rounded-2xl border border-purple-100 bg-purple-50/40 p-4"
+          class="rounded-2xl border border-primary-100 bg-primary-50/40 p-4"
         >
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -225,17 +225,17 @@ const metaRoutes = computed(() => {
           </div>
 
           <div class="mt-2">
-            <div class="overflow-hidden rounded-2xl border border-purple-200 bg-white">
+            <div class="overflow-hidden rounded-2xl border border-primary-200 bg-white">
               <div class="flex h-14 w-full">
                 <div
                   v-for="(target, idx) in route.targets"
                   :key="target.model_id"
                   class="relative h-full"
                   :style="{ flexGrow: target.capacity, flexBasis: '0%' }"
-                  :class="idx < route.targets.length - 1 ? 'border-r border-purple-200' : ''"
+                  :class="idx < route.targets.length - 1 ? 'border-r border-primary-200' : ''"
                 >
                   <div
-                    class="absolute inset-y-0 left-0 bg-purple-100/70"
+                    class="absolute inset-y-0 left-0 bg-primary-100/70"
                     :style="{ width: Math.min(100, Math.max(0, target.maxLoad)).toFixed(0) + '%' }"
                   />
                   <div class="relative flex h-full items-center justify-center gap-2 px-2 min-w-0">
@@ -246,7 +246,7 @@ const metaRoutes = computed(() => {
                         <UIcon
                           v-if="target.supports_images"
                           name="ph:image-square"
-                          class="h-3.5 w-3.5 text-purple-600 shrink-0"
+                          class="h-3.5 w-3.5 text-primary-600 shrink-0"
                         />
                       </div>
                       <div class="truncate text-[10px] text-slate-500">{{ target.provider_id }}</div>

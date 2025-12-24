@@ -98,7 +98,7 @@ const limitLoad = computed<LimitEntry[]>(() => {
       </div>
     </div>
 
-    <UCard class="border-purple-100 bg-white">
+    <UCard class="border-primary-100 bg-white">
       <template #header>
         <div class="flex items-center justify-between">
           <div>
@@ -113,7 +113,7 @@ const limitLoad = computed<LimitEntry[]>(() => {
         <div
           v-for="item in limitLoad"
           :key="item.model_id"
-          class="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 shadow-sm"
+          class="rounded-2xl border border-primary-100 bg-primary-50/60 p-4 shadow-sm"
         >
           <div class="flex items-center justify-between gap-3">
             <div>
@@ -147,7 +147,7 @@ const limitLoad = computed<LimitEntry[]>(() => {
                 <div class="h-2 rounded-full bg-white/70">
                   <div
                     class="h-full rounded-full"
-                    :class="win.pct >= 100 ? 'bg-rose-500' : win.pct >= 80 ? 'bg-amber-500' : 'bg-purple-500'"
+                    :class="win.pct >= 100 ? 'bg-rose-500' : win.pct >= 80 ? 'bg-amber-500' : 'bg-primary-500'"
                     :style="{ width: Math.min(100, clampPercent(win.pct)).toFixed(0) + '%' }"
                   />
                 </div>
@@ -167,7 +167,7 @@ const limitLoad = computed<LimitEntry[]>(() => {
                 <div class="h-2 rounded-full bg-white/70">
                   <div
                     class="h-full rounded-full"
-                    :class="win.pct >= 100 ? 'bg-rose-500' : win.pct >= 80 ? 'bg-amber-500' : 'bg-purple-500'"
+                    :class="win.pct >= 100 ? 'bg-rose-500' : win.pct >= 80 ? 'bg-amber-500' : 'bg-primary-500'"
                     :style="{ width: Math.min(100, clampPercent(win.pct)).toFixed(0) + '%' }"
                   />
                 </div>
@@ -178,7 +178,7 @@ const limitLoad = computed<LimitEntry[]>(() => {
       </div>
 
       <div v-else class="text-sm text-slate-500">
-        No models have limits configured yet. Set caps in <NuxtLink to="/models" class="text-purple-600 hover:underline">/models</NuxtLink>.
+        No models have limits configured yet. Set caps in <NuxtLink to="/models" class="text-primary-600 hover:underline">/models</NuxtLink>.
       </div>
     </UCard>
 
