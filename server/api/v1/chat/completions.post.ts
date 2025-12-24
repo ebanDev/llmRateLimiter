@@ -167,24 +167,26 @@ export default defineEventHandler(async (event) => {
   console.log(`→ Forwarding request to model '${chosen.name}' at ${url}`);
   let upstream;
   try {
-    const openRouterPreference = isOpenRouterProvider((chosen as any).provider_id)
-      ? openRouterProviderSlug((chosen as any).provider_id)
-      : null;
-    const openRouterOverride = isOpenRouterProvider((chosen as any).provider_id)
-      ? openRouterPreference || (chosen as any).openrouter_provider
-      : null;
-    const mergedProviderPrefs = openRouterOverride && openRouterOverride !== "auto"
+    let openRouterOverride: string | null = null;
+    if (isOpenRouterProvider((chosen as any).provider_id)) {
+      const providerSlug = openRouterProviderSlug((chosen as any).provider_id);
+      openRouterOverride = providerSlug !== "auto" ? providerSlug : (chosen as any).openrouter_provider || null;
+    }
+
+    const mergedProviderPrefs = openRouterOverride
       ? (() => {
-          const incomingProvider = body?.provider && typeof body.provider === "object" ? { ...body.provider } : {};
-          const order = Array.isArray(incomingProvider.order) ? incomingProvider.order.slice() : [];
-          if (!order.includes(openRouterOverride)) order.unshift(openRouterOverride);
-          return {
-            ...incomingProvider,
-            order,
-            allow_fallbacks: false,
-          };
-        })()
+        const incomingProvider = body?.provider && typeof body.provider === "object" ? { ...body.provider } : {};
+        const order = Array.isArray(incomingProvider.order) ? incomingProvider.order.slice() : [];
+        if (!order.includes(openRouterOverride)) order.unshift(openRouterOverride);
+        return {
+          ...incomingProvider,
+          order,
+          allow_fallbacks: false,
+        };
+      })()
       : body?.provider;
+
+    console.log(`→ Forwarding request to model '${chosen.name}' at ${url} with openRouter provider override: ${openRouterOverride} and body ${JSON.stringify(mergedProviderPrefs)}, wantsStream? ${wantsStream}`);
 
     upstream = await fetch(url, {
       method: "POST",
@@ -195,6 +197,11 @@ export default defineEventHandler(async (event) => {
         ...(openRouterOverride ? { provider: mergedProviderPrefs } : {}),
       }),
     });
+
+    if (upstream.status >= 400) {
+      const errorText = await upstream.text();
+      console.log(`← Upstream model '${chosen.name}' returned error: ${upstream.status} - ${errorText}`);
+    }
   } catch (err: any) {
     throw createError({ statusCode: 502, statusMessage: `Upstream request failed: ${err?.message}` });
   }
@@ -251,7 +258,7 @@ export default defineEventHandler(async (event) => {
                   };
                 }
               } catch {
-                // ignore malformed chunks
+                console.log(`← Failed to parse streaming chunk from model '${chosen.name}':`, payload);
               }
             }
           }
@@ -261,7 +268,7 @@ export default defineEventHandler(async (event) => {
             console.log(`← Recorded usage for model '${chosen.name}':`, lastUsage);
           }
         } catch {
-          // ignore inspect stream errors
+          console.log(`← Failed to inspect streaming response from model '${chosen.name}'`);
         }
       })();
 
