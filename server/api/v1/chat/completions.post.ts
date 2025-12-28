@@ -89,6 +89,36 @@ const conversationHasImageInputs = (payload: any) => {
   return false;
 };
 
+const extractTextContent = (value: any): string[] => {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(extractTextContent);
+  if (!value || typeof value !== "object") return [];
+
+  if (typeof value.text === "string") return [value.text];
+  if (typeof value.input_text === "string") return [value.input_text];
+  if (typeof value.content === "string") return [value.content];
+  if (Array.isArray(value.content)) return value.content.flatMap(extractTextContent);
+  return [];
+};
+
+const estimatePromptTokens = (payload: any) => {
+  const chunks: string[] = [];
+  if (Array.isArray(payload?.messages)) {
+    for (const message of payload.messages) {
+      chunks.push(...extractTextContent(message?.content));
+    }
+  }
+  if (typeof payload?.prompt === "string") chunks.push(payload.prompt);
+  if (typeof payload?.input === "string") chunks.push(payload.input);
+  if (Array.isArray(payload?.input)) {
+    chunks.push(...extractTextContent(payload.input));
+  }
+
+  const text = chunks.join("\n");
+  if (!text) return 0;
+  return Math.ceil(text.length / 4);
+};
+
 export default defineEventHandler(async (event) => {
   const body = await readBody<any>(event);
   const requestedModel = body?.model;
@@ -98,6 +128,7 @@ export default defineEventHandler(async (event) => {
 
   const wantsStream = body?.stream === true;
   const needsImageCapableModel = conversationHasImageInputs(body);
+  const estimatedPromptTokens = estimatePromptTokens(body);
 
   // Resolve model or meta
   const directMatch = modelByName(requestedModel);
@@ -134,7 +165,8 @@ export default defineEventHandler(async (event) => {
         tokens_per_day: (limits as any)?.tokens_per_day,
         tokens_per_month: (limits as any)?.tokens_per_month,
       },
-      "completion"
+      "completion",
+      estimatedPromptTokens
     );
 
     if (rate.ok) {

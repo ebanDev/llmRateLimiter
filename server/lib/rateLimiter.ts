@@ -52,9 +52,11 @@ export const isRateLimited = (
     tokens_per_day?: number | null;
     tokens_per_month?: number | null;
   },
-  kind: "completion" | "search" = "completion"
+  kind: "completion" | "search" = "completion",
+  pendingTokens: number = 0
 ) => {
   const now = Math.floor(Date.now() / 1000);
+  const requestTokens = Math.max(0, Number.isFinite(pendingTokens) ? pendingTokens : 0);
   type LimitResult = { ok: boolean; retryAfter?: number };
   const evaluate = (cap: number | null | undefined, window: Window): LimitResult => {
     if (!cap) return { ok: true };
@@ -70,8 +72,9 @@ export const isRateLimited = (
 
   const evaluateTokens = (cap: number | null | undefined, window: Window): LimitResult => {
     if (!cap) return { ok: true };
+    if (requestTokens > cap) return { ok: false };
     const used = tokensSince(modelId, windowSeconds[window], kind);
-    if (used < cap) return { ok: true };
+    if (used + requestTokens <= cap) return { ok: true };
     const oldestStmt = db.prepare<{ ts: number }, any>(
       `SELECT ts FROM request_log WHERE model_id = ? AND ts >= ? AND kind = ? ORDER BY ts ASC LIMIT 1`
     );
